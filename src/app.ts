@@ -2,8 +2,14 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
+
 import eventRoutes from "./api/v1/routes/eventRoutes";
+import categoryRoutes from "./api/v1/routes/categoryRoutes";
+import registrationRoutes from "./api/v1/routes/registrationRoutes";
+
 import { swaggerSpec } from "../config/swagger";
+import { notFoundHandler } from "./api/v1/middleware/notFoundHandler";
+import { errorHandler } from "./api/v1/middleware/errorHandler";
 
 const app = express();
 
@@ -69,17 +75,17 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *               properties:
  *                 status:
  *                   type: string
- *                   example: "OK"
+ *                   example: OK
  *                 uptime:
  *                   type: number
  *                   example: 12.45
  *                 timestamp:
  *                   type: string
  *                   format: date-time
- *                   example: "2026-04-23T14:45:00.000Z"
+ *                   example: 2026-04-23T14:45:00.000Z
  *                 version:
  *                   type: string
- *                   example: "1.0.0"
+ *                   example: 1.0.0
  */
 app.get("/api/v1/health", (_req, res) => {
   res.status(200).json({
@@ -91,5 +97,10 @@ app.get("/api/v1/health", (_req, res) => {
 });
 
 app.use("/api/v1/events", eventRoutes);
+app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/registrations", registrationRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;
