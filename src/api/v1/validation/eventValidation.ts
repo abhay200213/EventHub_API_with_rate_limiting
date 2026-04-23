@@ -1,13 +1,6 @@
 import Joi from "joi";
 
 const statusValues = ["active", "cancelled", "completed"] as const;
-const categoryValues = [
-  "conference",
-  "workshop",
-  "meetup",
-  "seminar",
-  "general",
-] as const;
 
 /**
  * @openapi
@@ -21,63 +14,83 @@ const categoryValues = [
  *           example: "abc123"
  *         name:
  *           type: string
- *           minLength: 3
- *           example: "Tech Conference 2026"
+ *           example: "Backend Capstone Demo"
+ *         description:
+ *           type: string
+ *           example: "Initial milestone event for EventHub API"
  *         date:
  *           type: string
  *           format: date-time
- *           example: "2026-05-15T10:00:00.000Z"
+ *           example: "2026-05-10T18:00:00.000Z"
+ *         location:
+ *           type: string
+ *           example: "Winnipeg"
  *         capacity:
  *           type: integer
- *           minimum: 5
- *           example: 100
- *         registrationCount:
- *           type: integer
- *           minimum: 0
- *           example: 35
- *         status:
- *           type: string
- *           enum: [active, cancelled, completed]
- *           example: "active"
- *         category:
- *           type: string
- *           enum: [conference, workshop, meetup, seminar, general]
- *           example: "conference"
- *
- *     CreateEventInput:
- *       type: object
- *       required:
- *         - name
- *         - date
- *         - capacity
- *       properties:
- *         name:
- *           type: string
- *           minLength: 3
- *           example: "Tech Conference 2026"
- *         date:
- *           type: string
- *           format: date-time
- *           example: "2026-05-15T10:00:00.000Z"
- *         capacity:
- *           type: integer
- *           minimum: 5
+ *           minimum: 1
  *           example: 100
  *         registrationCount:
  *           type: integer
  *           minimum: 0
  *           example: 0
- *           default: 0
  *         status:
  *           type: string
  *           enum: [active, cancelled, completed]
  *           example: "active"
- *           default: "active"
- *         category:
+ *         categoryId:
  *           type: string
- *           enum: [conference, workshop, meetup, seminar, general]
- *           example: "general"
- *           default: "general"
+ *           example: "cat123"
+ *         createdBy:
+ *           type: string
+ *           example: "user123"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2026-04-23T16:02:38.793Z"
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2026-04-23T16:02:38.793Z"
+ *
+ *     CreateEventInput:
+ *       type: object
+ *       required:
+ *         - name
+ *         - description
+ *         - date
+ *         - location
+ *         - capacity
+ *         - status
+ *         - categoryId
+ *         - createdBy
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Backend Capstone Demo"
+ *         description:
+ *           type: string
+ *           example: "Initial milestone event for EventHub API"
+ *         date:
+ *           type: string
+ *           format: date-time
+ *           example: "2026-05-10T18:00:00.000Z"
+ *         location:
+ *           type: string
+ *           example: "Winnipeg"
+ *         capacity:
+ *           type: integer
+ *           minimum: 1
+ *           example: 100
+ *         status:
+ *           type: string
+ *           enum: [active, cancelled, completed]
+ *           example: "active"
+ *         categoryId:
+ *           type: string
+ *           example: "cat123"
+ *         createdBy:
+ *           type: string
+ *           example: "user123"
  *
  *     UpdateEventInput:
  *       type: object
@@ -85,28 +98,32 @@ const categoryValues = [
  *       properties:
  *         name:
  *           type: string
- *           minLength: 3
- *           example: "Updated Tech Conference"
+ *           example: "Updated Backend Demo"
+ *         description:
+ *           type: string
+ *           example: "Updated milestone event"
  *         date:
  *           type: string
  *           format: date-time
- *           example: "2026-06-01T09:00:00.000Z"
+ *           example: "2026-05-11T18:00:00.000Z"
+ *         location:
+ *           type: string
+ *           example: "RRC Polytech"
  *         capacity:
  *           type: integer
- *           minimum: 5
+ *           minimum: 1
  *           example: 120
  *         registrationCount:
  *           type: integer
  *           minimum: 0
- *           example: 40
+ *           example: 0
  *         status:
  *           type: string
  *           enum: [active, cancelled, completed]
- *           example: "completed"
- *         category:
+ *           example: "active"
+ *         categoryId:
  *           type: string
- *           enum: [conference, workshop, meetup, seminar, general]
- *           example: "seminar"
+ *           example: "cat123"
  *
  *     ValidationError:
  *       type: object
@@ -118,56 +135,34 @@ const categoryValues = [
  *           type: array
  *           items:
  *             type: string
- *           example:
- *             - "\"name\" length must be at least 3 characters long"
- *             - "\"capacity\" must be greater than or equal to 5"
  */
 
 export const createEventSchema = Joi.object({
-  name: Joi.string().min(3).required(),
-
-  date: Joi.date().iso().greater("now").required(),
-
-  capacity: Joi.number().integer().min(5).required(),
-
-  registrationCount: Joi.number()
-    .integer()
-    .min(0)
-    .max(Joi.ref("capacity"))
-    .default(0),
-
+  name: Joi.string().trim().min(3).max(100).required(),
+  description: Joi.string().trim().min(3).max(500).required(),
+  date: Joi.date().iso().required(),
+  location: Joi.string().trim().min(2).max(100).required(),
+  capacity: Joi.number().integer().min(1).required(),
   status: Joi.string()
     .valid(...statusValues)
-    .default("active"),
-
-  category: Joi.string()
-    .valid(...categoryValues)
-    .default("general"),
+    .required(),
+  categoryId: Joi.string().trim().required(),
+  createdBy: Joi.string().trim().required(),
 });
 
 export const updateEventSchema = Joi.object({
-  name: Joi.string().min(3),
-  date: Joi.date().iso().greater("now"),
-  capacity: Joi.number().integer().min(5),
-  registrationCount: Joi.number().integer().min(0),
-  status: Joi.string().valid(...statusValues),
-  category: Joi.string().valid(...categoryValues),
-})
-  .min(1)
-  .custom((value, helpers) => {
-    if (
-      value.capacity !== undefined &&
-      value.registrationCount !== undefined &&
-      value.registrationCount > value.capacity
-    ) {
-      return helpers.error("any.invalid", {
-        message: '"registrationCount" must be less than or equal to ref:capacity',
-      });
-    }
-
-    return value;
-  });
+  name: Joi.string().trim().min(3).max(100).optional(),
+  description: Joi.string().trim().min(3).max(500).optional(),
+  date: Joi.date().iso().optional(),
+  location: Joi.string().trim().min(2).max(100).optional(),
+  capacity: Joi.number().integer().min(1).optional(),
+  registrationCount: Joi.number().integer().min(0).optional(),
+  status: Joi.string()
+    .valid(...statusValues)
+    .optional(),
+  categoryId: Joi.string().trim().optional(),
+}).min(1);
 
 export const eventIdSchema = Joi.object({
-  id: Joi.string().trim().min(1).required(),
+  id: Joi.string().trim().required(),
 });

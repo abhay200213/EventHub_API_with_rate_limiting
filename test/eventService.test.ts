@@ -1,120 +1,230 @@
 import {
   createEvent,
-  deleteEventById,
   getAllEvents,
   getEventById,
   updateEventById,
+  deleteEventById,
 } from "../src/api/v1/services/eventService";
-import * as eventRepository from "../src/api/v1/repositories/eventRepository";
 
-jest.mock("../src/api/v1/repositories/eventRepository");
+import {
+  createEventRepo,
+  deleteEventByIdRepo,
+  getAllEventsRepo,
+  getEventByIdRepo,
+  updateEventByIdRepo,
+} from "../src/api/v1/repositories/eventRepository";
+
+jest.mock("../src/api/v1/repositories/eventRepository", () => ({
+  createEventRepo: jest.fn(),
+  getAllEventsRepo: jest.fn(),
+  getEventByIdRepo: jest.fn(),
+  updateEventByIdRepo: jest.fn(),
+  deleteEventByIdRepo: jest.fn(),
+}));
 
 describe("eventService", () => {
-  afterEach(() => {
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("should create an event using the repository", async () => {
-    const mockedCreate = jest.mocked(eventRepository.createEventDocument);
+  describe("createEvent", () => {
+    it("should create an event with registrationCount, createdAt, and updatedAt", async () => {
+      const input = {
+        name: "Backend Demo",
+        description: "Milestone test event",
+        date: "2026-05-10T18:00:00.000Z",
+        location: "Winnipeg",
+        capacity: 100,
+        status: "active" as const,
+        categoryId: "cat123",
+        createdBy: "user123",
+      };
 
-    mockedCreate.mockImplementation(async (event) => event);
+      (createEventRepo as jest.Mock).mockImplementation(async (eventData) => ({
+        id: "evt123",
+        ...eventData,
+      }));
 
-    const result = await createEvent({
-      name: "Tech Conference 2025",
-      date: "2099-12-25T09:00:00.000Z",
-      capacity: 100,
+      const result = await createEvent(input);
+
+      expect(createEventRepo).toHaveBeenCalledTimes(1);
+      expect(createEventRepo).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...input,
+          registrationCount: 0,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        })
+      );
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: "evt123",
+          ...input,
+          registrationCount: 0,
+          createdAt: expect.any(String),
+          updatedAt: expect.any(String),
+        })
+      );
     });
-
-    expect(mockedCreate).toHaveBeenCalledTimes(1);
-    expect(result.name).toBe("Tech Conference 2025");
   });
 
-  it("should get all events using the repository", async () => {
-    const mockedGetAll = jest.mocked(eventRepository.getAllEventDocuments);
+  describe("getAllEvents", () => {
+    it("should return all events", async () => {
+      const mockEvents = [
+        {
+          id: "evt1",
+          name: "Event 1",
+          description: "Desc 1",
+          date: "2026-05-10T18:00:00.000Z",
+          location: "Winnipeg",
+          capacity: 50,
+          registrationCount: 0,
+          status: "active",
+          categoryId: "cat1",
+          createdBy: "user1",
+          createdAt: "2026-04-23T10:00:00.000Z",
+          updatedAt: "2026-04-23T10:00:00.000Z",
+        },
+      ];
 
-    mockedGetAll.mockResolvedValue([
-      {
-        id: "evt_000001",
-        name: "Event A",
-        date: "2099-12-25T09:00:00.000Z",
-        capacity: 100,
+      (getAllEventsRepo as jest.Mock).mockResolvedValue(mockEvents);
+
+      const result = await getAllEvents();
+
+      expect(getAllEventsRepo).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockEvents);
+    });
+  });
+
+  describe("getEventById", () => {
+    it("should return an event when found", async () => {
+      const mockEvent = {
+        id: "evt1",
+        name: "Event 1",
+        description: "Desc 1",
+        date: "2026-05-10T18:00:00.000Z",
+        location: "Winnipeg",
+        capacity: 50,
         registrationCount: 0,
         status: "active",
-        category: "general",
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      },
-    ]);
+        categoryId: "cat1",
+        createdBy: "user1",
+        createdAt: "2026-04-23T10:00:00.000Z",
+        updatedAt: "2026-04-23T10:00:00.000Z",
+      };
 
-    const result = await getAllEvents();
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(mockEvent);
 
-    expect(mockedGetAll).toHaveBeenCalledTimes(1);
-    expect(result).toHaveLength(1);
-  });
+      const result = await getEventById("evt1");
 
-  it("should get one event by id using the repository", async () => {
-    const mockedGetById = jest.mocked(eventRepository.getEventDocumentById);
-
-    mockedGetById.mockResolvedValue({
-      id: "evt_000001",
-      name: "Event A",
-      date: "2099-12-25T09:00:00.000Z",
-      capacity: 100,
-      registrationCount: 0,
-      status: "active",
-      category: "general",
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
+      expect(getEventByIdRepo).toHaveBeenCalledWith("evt1");
+      expect(result).toEqual(mockEvent);
     });
 
-    const result = await getEventById("evt_000001");
+    it("should return null when event is not found", async () => {
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(null);
 
-    expect(mockedGetById).toHaveBeenCalledWith("evt_000001");
-    expect(result?.id).toBe("evt_000001");
+      const result = await getEventById("missing-id");
+
+      expect(getEventByIdRepo).toHaveBeenCalledWith("missing-id");
+      expect(result).toBeNull();
+    });
   });
 
-  it("should update an event using the repository", async () => {
-    const mockedGetById = jest.mocked(eventRepository.getEventDocumentById);
-    const mockedUpdate = jest.mocked(eventRepository.updateEventDocumentById);
+  describe("updateEventById", () => {
+    it("should update and return the event when it exists", async () => {
+      const existingEvent = {
+        id: "evt1",
+        name: "Old Event",
+        description: "Old Desc",
+        date: "2026-05-10T18:00:00.000Z",
+        location: "Winnipeg",
+        capacity: 50,
+        registrationCount: 0,
+        status: "active",
+        categoryId: "cat1",
+        createdBy: "user1",
+        createdAt: "2026-04-23T10:00:00.000Z",
+        updatedAt: "2026-04-23T10:00:00.000Z",
+      };
 
-    mockedGetById.mockResolvedValue({
-      id: "evt_000001",
-      name: "Event A",
-      date: "2099-12-25T09:00:00.000Z",
-      capacity: 100,
-      registrationCount: 0,
-      status: "active",
-      category: "general",
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
+      const updates = {
+        name: "Updated Event",
+        capacity: 120,
+      };
+
+      const updatedEvent = {
+        ...existingEvent,
+        ...updates,
+        updatedAt: "2026-04-23T12:00:00.000Z",
+      };
+
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(existingEvent);
+      (updateEventByIdRepo as jest.Mock).mockResolvedValue(updatedEvent);
+
+      const result = await updateEventById("evt1", updates);
+
+      expect(getEventByIdRepo).toHaveBeenCalledWith("evt1");
+      expect(updateEventByIdRepo).toHaveBeenCalledTimes(1);
+      expect(updateEventByIdRepo).toHaveBeenCalledWith(
+        "evt1",
+        expect.objectContaining({
+          ...updates,
+          updatedAt: expect.any(String),
+        })
+      );
+      expect(result).toEqual(updatedEvent);
     });
 
-    mockedUpdate.mockResolvedValue({
-      id: "evt_000001",
-      name: "Event A",
-      date: "2099-12-25T09:00:00.000Z",
-      capacity: 100,
-      registrationCount: 0,
-      status: "completed",
-      category: "general",
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-02T00:00:00.000Z",
+    it("should return null when trying to update a non-existing event", async () => {
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(null);
+
+      const result = await updateEventById("missing-id", {
+        name: "Updated Event",
+      });
+
+      expect(getEventByIdRepo).toHaveBeenCalledWith("missing-id");
+      expect(updateEventByIdRepo).not.toHaveBeenCalled();
+      expect(result).toBeNull();
     });
-
-    const result = await updateEventById("evt_000001", { status: "completed" });
-
-    expect(mockedUpdate).toHaveBeenCalledTimes(1);
-    expect(result?.status).toBe("completed");
   });
 
-  it("should delete an event using the repository", async () => {
-    const mockedDelete = jest.mocked(eventRepository.deleteEventDocumentById);
+  describe("deleteEventById", () => {
+    it("should delete and return true when event exists", async () => {
+      const existingEvent = {
+        id: "evt1",
+        name: "Event 1",
+        description: "Desc 1",
+        date: "2026-05-10T18:00:00.000Z",
+        location: "Winnipeg",
+        capacity: 50,
+        registrationCount: 0,
+        status: "active",
+        categoryId: "cat1",
+        createdBy: "user1",
+        createdAt: "2026-04-23T10:00:00.000Z",
+        updatedAt: "2026-04-23T10:00:00.000Z",
+      };
 
-    mockedDelete.mockResolvedValue(true);
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(existingEvent);
+      (deleteEventByIdRepo as jest.Mock).mockResolvedValue(true);
 
-    const result = await deleteEventById("evt_000001");
+      const result = await deleteEventById("evt1");
 
-    expect(mockedDelete).toHaveBeenCalledWith("evt_000001");
-    expect(result).toBe(true);
+      expect(getEventByIdRepo).toHaveBeenCalledWith("evt1");
+      expect(deleteEventByIdRepo).toHaveBeenCalledWith("evt1");
+      expect(result).toBe(true);
+    });
+
+    it("should return false when trying to delete a non-existing event", async () => {
+      (getEventByIdRepo as jest.Mock).mockResolvedValue(null);
+
+      const result = await deleteEventById("missing-id");
+
+      expect(getEventByIdRepo).toHaveBeenCalledWith("missing-id");
+      expect(deleteEventByIdRepo).not.toHaveBeenCalled();
+      expect(result).toBe(false);
+    });
   });
 });
