@@ -48,7 +48,8 @@ export const getCategoryByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const category = await getCategoryById(req.params.id);
+    const id = String(req.params.id);
+    const category = await getCategoryById(id);
 
     if (!category) {
       res.status(404).json({
@@ -72,7 +73,8 @@ export const updateCategoryByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const updatedCategory = await updateCategoryById(req.params.id, req.body);
+    const id = String(req.params.id);
+    const updatedCategory = await updateCategoryById(id, req.body);
 
     if (!updatedCategory) {
       res.status(404).json({
@@ -96,7 +98,8 @@ export const deleteCategoryByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const deleted = await deleteCategoryById(req.params.id);
+    const id = String(req.params.id);
+    const deleted = await deleteCategoryById(id);
 
     if (!deleted) {
       res.status(404).json({

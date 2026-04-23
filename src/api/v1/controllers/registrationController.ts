@@ -48,7 +48,8 @@ export const getRegistrationByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const registration = await getRegistrationById(req.params.id);
+    const id = String(req.params.id);
+    const registration = await getRegistrationById(id);
 
     if (!registration) {
       res.status(404).json({
@@ -72,10 +73,8 @@ export const updateRegistrationByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const updatedRegistration = await updateRegistrationById(
-      req.params.id,
-      req.body
-    );
+    const id = String(req.params.id);
+    const updatedRegistration = await updateRegistrationById(id, req.body);
 
     if (!updatedRegistration) {
       res.status(404).json({
@@ -99,7 +98,8 @@ export const deleteRegistrationByIdHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const deleted = await deleteRegistrationById(req.params.id);
+    const id = String(req.params.id);
+    const deleted = await deleteRegistrationById(id);
 
     if (!deleted) {
       res.status(404).json({

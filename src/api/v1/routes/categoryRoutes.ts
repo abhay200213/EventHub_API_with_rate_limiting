@@ -1,4 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { ValidationErrorItem } from "joi";
 import {
   createCategoryHandler,
   deleteCategoryByIdHandler,
@@ -27,7 +28,9 @@ const validateIdParam = (
   if (error) {
     res.status(400).json({
       message: "Validation error",
-      errors: error.details.map((detail) => detail.message),
+      errors: error.details.map(
+        (detail: ValidationErrorItem) => detail.message
+      ),
     });
     return;
   }
