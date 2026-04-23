@@ -40,11 +40,11 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("CORS policy: This origin is not allowed"));
+      return callback(null, false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

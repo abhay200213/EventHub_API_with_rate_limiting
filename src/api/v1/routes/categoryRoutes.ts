@@ -211,9 +211,9 @@ router.get("/", getAllCategoriesHandler);
  *       - in: path
  *         name: id
  *         required: true
+ *         description: Category ID
  *         schema:
  *           type: string
- *           example: "cat123"
  *     responses:
  *       200:
  *         description: Category retrieved successfully
@@ -253,9 +253,9 @@ router.get("/:id", validateIdParam, getCategoryByIdHandler);
  *       - in: path
  *         name: id
  *         required: true
+ *         description: Category ID
  *         schema:
  *           type: string
- *           example: "cat123"
  *     requestBody:
  *       required: true
  *       content:
@@ -306,9 +306,9 @@ router.put(
  *       - in: path
  *         name: id
  *         required: true
+ *         description: Category ID
  *         schema:
  *           type: string
- *           example: "cat123"
  *     responses:
  *       200:
  *         description: Category deleted successfully
